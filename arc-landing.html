@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARC-7 — Neural Interface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B0D10;
+    --panel: #12161B;
+    --panel-2: #171C22;
+    --line: #262C33;
+    --line-soft: #1B2027;
+    --text: #E9EDF0;
+    --text-dim: #9AA5AD;
+    --text-mute: #5C666E;
+    --teal: #2FD9C4;
+    --teal-dim: #1B7A6E;
+    --amber: #FF9D3D;
+    --radius: 4px;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+  a{ color: inherit; }
+  .wrap{ max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+  .mono{ font-family: 'IBM Plex Mono', monospace; }
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before{
+    content: "";
+    width: 6px; height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  h1, h2, h3{ font-family: 'Space Grotesk', sans-serif; font-weight: 500; letter-spacing: -0.01em; }
+  :focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+
+  /* NAV */
+  header{
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(11,13,16,0.88);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  nav{ display: flex; align-items: center; justify-content: space-between; height: 72px; }
+  .logo{ display:flex; align-items:center; gap:10px; font-family:'Space Grotesk'; font-weight:700; font-size:19px; letter-spacing:0.02em; }
+  .logo-mark{ width:26px; height:26px; flex-shrink:0; }
+  .nav-links{ display:flex; gap:36px; list-style:none; }
+  .nav-links a{ font-size:14px; color:var(--text-dim); text-decoration:none; transition:color .15s; }
+  .nav-links a:hover{ color:var(--text); }
+  .nav-cta{
+    font-family:'IBM Plex Mono'; font-size:13px; letter-spacing:0.04em;
+    background:transparent; border:1px solid var(--teal-dim); color:var(--teal);
+    padding:9px 18px; border-radius:var(--radius); cursor:pointer; text-decoration:none;
+    transition: all .15s;
+  }
+  .nav-cta:hover{ background: rgba(47,217,196,0.08); border-color:var(--teal); }
+  .nav-toggle{ display:none; }
+
+  /* HERO */
+  .hero{ padding: 96px 0 88px; }
+  .hero-grid{ display:grid; grid-template-columns: 1.1fr 0.9fr; gap:64px; align-items:center; }
+  .hero h1{ font-size: 52px; line-height:1.08; margin: 22px 0 24px; }
+  .hero h1 em{ font-style:normal; color:var(--teal); }
+  .hero p.lede{ font-size:17px; color:var(--text-dim); max-width: 440px; margin-bottom:34px; }
+  .cta-row{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .btn-primary{
+    font-family:'IBM Plex Mono'; font-size:14px; letter-spacing:0.03em;
+    background: var(--teal); color:#04211D; border:none;
+    padding:14px 26px; border-radius:var(--radius); cursor:pointer; text-decoration:none; display:inline-block;
+    transition: transform .15s, background .15s;
+  }
+  .btn-primary:hover{ background:#4EE6D2; transform: translateY(-1px); }
+  .btn-ghost{
+    font-family:'IBM Plex Mono'; font-size:14px;
+    color:var(--text-dim); text-decoration:none; padding:14px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .btn-ghost:hover{ color:var(--text); border-color: var(--text-dim); }
+
+  /* VITALS PANEL — signature element */
+  .vitals{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px 24px;
+  }
+  .vitals-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .vitals-title{ font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mute); }
+  .vitals-status{ font-family:'IBM Plex Mono'; font-size:11px; color:var(--teal); display:flex; align-items:center; gap:6px; }
+  .vitals-status .dot{ width:6px; height:6px; border-radius:50%; background:var(--teal); animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink{ 0%,100%{ opacity:1; } 50%{ opacity:0.25; } }
+  .trace-box{ background: var(--bg); border:1px solid var(--line-soft); border-radius:6px; padding:14px 8px; margin-bottom:16px; }
+  .trace-box svg{ display:block; width:100%; height:96px; }
+  .vitals-readouts{ display:grid; grid-template-columns: repeat(3, 1fr); gap:1px; background:var(--line-soft); border:1px solid var(--line-soft); border-radius:6px; overflow:hidden; }
+  .readout{ background: var(--panel-2); padding:12px 10px; text-align:center; }
+  .readout .val{ font-family:'IBM Plex Mono'; font-size:22px; color:var(--text); }
+  .readout .val span{ font-size:13px; color:var(--text-mute); }
+  .readout .lbl{ font-family:'IBM Plex Mono'; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mute); margin-top:4px; }
+
+  /* SECTIONS */
+  section{ padding: 88px 0; border-top: 1px solid var(--line-soft); }
+  .section-head{ max-width: 560px; margin-bottom: 48px; }
+  .section-head h2{ font-size:32px; margin-top:14px; }
+  .section-head p{ color: var(--text-dim); margin-top:14px; font-size:15px; }
+
+  /* MODULES */
+  .modules{ display:grid; grid-template-columns: repeat(4, 1fr); gap:1px; background:var(--line-soft); border:1px solid var(--line-soft); border-radius:8px; overflow:hidden; }
+  .module{ background: var(--panel); padding:28px 22px; }
+  .module .mod-id{ font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-mute); margin-bottom:16px; }
+  .module h3{ font-size:17px; margin-bottom:10px; }
+  .module p{ font-size:13.5px; color:var(--text-dim); }
+
+  /* SPECS */
+  .specs-table{ width:100%; border-collapse: collapse; font-size:14px; }
+  .specs-table tr{ border-bottom: 1px solid var(--line-soft); }
+  .specs-table tr:first-child{ border-top: 1px solid var(--line-soft); }
+  .specs-table td{ padding: 16px 4px; }
+  .specs-table td:first-child{ font-family:'IBM Plex Mono'; color:var(--text-mute); width:38%; font-size:12.5px; letter-spacing:0.04em; text-transform:uppercase; }
+  .specs-table td:last-child{ color:var(--text); }
+  .specs-table .tag{ display:inline-block; font-family:'IBM Plex Mono'; font-size:11px; color:var(--amber); border:1px solid rgba(255,157,61,0.35); padding:2px 8px; border-radius:3px; margin-left:10px; }
+
+  /* PROCESS */
+  .process{ display:grid; grid-template-columns: repeat(3, 1fr); gap:28px; }
+  .step{ position:relative; padding-top: 36px; }
+  .step-num{ font-family:'Space Grotesk'; font-weight:700; font-size:15px; color:var(--bg); background: var(--teal); width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:absolute; top:0; left:0; }
+  .step h3{ font-size:17px; margin: 8px 0 10px; }
+  .step p{ font-size:14px; color:var(--text-dim); }
+  .step-line{ position:absolute; top:15px; left:44px; right:-14px; height:1px; background: var(--line); }
+  .step:last-child .step-line{ display:none; }
+
+  /* ACCESS FORM */
+  .access{ background: var(--panel); border:1px solid var(--line); border-radius:10px; padding:48px; }
+  .access-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:56px; align-items:center; }
+  .access h2{ font-size:28px; margin: 14px 0 12px; }
+  .access p{ color:var(--text-dim); font-size:14.5px; max-width:380px; }
+  form{ display:flex; flex-direction:column; gap:14px; }
+  label{ font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mute); margin-bottom:6px; display:block; }
+  input{
+    width:100%; background: var(--bg); border:1px solid var(--line); color:var(--text);
+    padding:12px 14px; border-radius:var(--radius); font-family:'IBM Plex Sans'; font-size:14px;
+  }
+  input::placeholder{ color: var(--text-mute); }
+  input:focus{ border-color: var(--teal); }
+  .field-row{ display:flex; flex-direction:column; }
+  .submit-note{ font-size:12px; color:var(--text-mute); margin-top:2px; }
+
+  footer{ border-top:1px solid var(--line-soft); padding: 32px 0; }
+  .foot-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+  .foot-links{ display:flex; gap:24px; list-style:none; }
+  .foot-links a{ font-size:13px; color:var(--text-mute); text-decoration:none; }
+  .foot-links a:hover{ color: var(--text-dim); }
+  .foot-mono{ font-family:'IBM Plex Mono'; font-size:12px; color:var(--text-mute); }
+
+  @media (max-width: 860px){
+    .hero-grid{ grid-template-columns: 1fr; }
+    .hero h1{ font-size:38px; }
+    .modules{ grid-template-columns: repeat(2,1fr); }
+    .process{ grid-template-columns: 1fr; }
+    .step-line{ display:none; }
+    .access-grid{ grid-template-columns: 1fr; gap:32px; }
+    .nav-links{ display:none; }
+    section{ padding: 56px 0; }
+    .hero{ padding: 56px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="logo">
+        <svg class="logo-mark" viewBox="0 0 26 26" fill="none">
+          <circle cx="13" cy="13" r="11" stroke="#2FD9C4" stroke-width="1.4"/>
+          <path d="M13 4 V13 L19 17" stroke="#2FD9C4" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        ARC&#8209;7
+      </div>
+      <ul class="nav-links">
+        <li><a href="#modules">Capabilities</a></li>
+        <li><a href="#specs">Specifications</a></li>
+        <li><a href="#process">Activation</a></li>
+      </ul>
+      <a href="#access" class="nav-cta">Request access</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero" style="border-top:none;">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Neural interface, generation 7</div>
+        <h1>Your nervous<br>system, <em>extended.</em></h1>
+        <p class="lede">ARC&#8209;7 is a subdermal interface that reads and writes to your peripheral nervous system, giving trained reflexes a second, faster pathway to run on.</p>
+        <div class="cta-row">
+          <a href="#access" class="btn-primary">Request access</a>
+          <a href="#specs" class="btn-ghost">View specifications &rarr;</a>
+        </div>
+      </div>
+
+      <div class="vitals">
+        <div class="vitals-head">
+          <span class="vitals-title">Live diagnostic feed</span>
+          <span class="vitals-status"><span class="dot"></span>Linked</span>
+        </div>
+        <div class="trace-box">
+          <svg viewBox="0 0 400 96" preserveAspectRatio="none">
+            <path id="tracePath" d="M0,48 L400,48" stroke="#2FD9C4" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="vitals-readouts">
+          <div class="readout">
+            <div class="val mono" id="syncVal">0<span>%</span></div>
+            <div class="lbl">Neural sync</div>
+          </div>
+          <div class="readout">
+            <div class="val mono" id="pulseVal">--<span> bpm</span></div>
+            <div class="lbl">Pulse</div>
+          </div>
+          <div class="readout">
+            <div class="val mono" id="pwrVal">0<span>%</span></div>
+            <div class="lbl">Power</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="modules">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Capabilities</div>
+        <h2>Four systems, one interface.</h2>
+        <p>Each module runs independently and can be toggled per task, so the interface never runs at full load unless the situation calls for it.</p>
+      </div>
+      <div class="modules">
+        <div class="module">
+          <div class="mod-id mono">MOD.01</div>
+          <h3>Reflex bridge</h3>
+          <p>Routes trained motor patterns around the spinal delay, cutting reaction time by a measured 40&ndash;60ms.</p>
+        </div>
+        <div class="module">
+          <div class="mod-id mono">MOD.02</div>
+          <h3>Memory cache</h3>
+          <p>Buffers short-term recall externally, so procedural sequences stay retrievable under fatigue or stress.</p>
+        </div>
+        <div class="module">
+          <div class="mod-id mono">MOD.03</div>
+          <h3>Biofeedback loop</h3>
+          <p>Reads cortisol and heart-rate variability in real time and nudges breathing pace before you notice the spike.</p>
+        </div>
+        <div class="module">
+          <div class="mod-id mono">MOD.04</div>
+          <h3>Sync lock</h3>
+          <p>Encrypts the neural channel per-session; the interface goes inert the instant skin contact breaks.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="specs">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Specifications</div>
+        <h2>What's actually under the skin.</h2>
+      </div>
+      <table class="specs-table">
+        <tr><td>Interface type</td><td>Subdermal, peripheral nerve contact array</td></tr>
+        <tr><td>Placement</td><td>Forearm, 8cm proximal to wrist &mdash; outpatient procedure</td></tr>
+        <tr><td>Latency</td><td>3.2ms round-trip signal delay</td></tr>
+        <tr><td>Power source</td><td>Piezoelectric, charged by wrist motion <span class="tag">No charging</span></td></tr>
+        <tr><td>Battery reserve</td><td>96 hours at rest, no motion input</td></tr>
+        <tr><td>Compatibility</td><td>Any limb with intact peripheral nerve function</td></tr>
+        <tr><td>Data retention</td><td>Local only &mdash; nothing leaves the device by default</td></tr>
+        <tr><td>Removal</td><td>Fully reversible, single outpatient procedure</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="process">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Activation</div>
+        <h2>Three visits. That's the whole process.</h2>
+      </div>
+      <div class="process">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-line"></div>
+          <h3>Implant</h3>
+          <p>A 40-minute outpatient placement under local anesthetic. Most people walk out the same day.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-line"></div>
+          <h3>Calibration</h3>
+          <p>Two weeks of guided sessions teach the interface your baseline nerve signatures.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Activation</h3>
+          <p>The reflex bridge goes live. Full module access unlocks gradually over 30 days.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="access">
+    <div class="wrap">
+      <div class="access">
+        <div class="access-grid">
+          <div>
+            <div class="eyebrow">Early access</div>
+            <h2>Request access to ARC&#8209;7.</h2>
+            <p>We're onboarding in small cohorts to keep calibration support close. Tell us where to reach you and we'll follow up with next steps.</p>
+          </div>
+          <form onsubmit="event.preventDefault(); document.getElementById('formNote').textContent='Request received. Check your inbox for next steps.'; document.getElementById('formNote').style.color='var(--teal)';">
+            <div class="field-row">
+              <label for="nameInput">Name</label>
+              <input id="nameInput" type="text" placeholder="Jordan Reyes" required>
+            </div>
+            <div class="field-row">
+              <label for="emailInput">Email</label>
+              <input id="emailInput" type="email" placeholder="jordan@domain.com" required>
+            </div>
+            <a href="#" onclick="event.preventDefault(); this.closest('form').requestSubmit();" class="btn-primary" style="text-align:center; margin-top:6px;">Submit request</a>
+            <div class="submit-note" id="formNote">No spam. One email when your cohort opens.</div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div class="foot-mono">ARC&#8209;7 &mdash; NEURAL INTERFACE SYSTEMS</div>
+    <ul class="foot-links">
+      <li><a href="#specs">Specifications</a></li>
+      <li><a href="#access">Access</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+  // Animated vitals: heartbeat waveform morphing into a circuit trace, with ticking counters
+  (function(){
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var syncEl = document.getElementById('syncVal');
+    var pulseEl = document.getElementById('pulseVal');
+    var pwrEl = document.getElementById('pwrVal');
+    var pathEl = document.getElementById('tracePath');
+
+    var heartbeat = "M0,48 L40,48 L52,20 L64,76 L76,48 L400,48";
+    var heartbeat2 = "M0,48 L100,48 L112,20 L124,76 L136,48 L400,48";
+    var circuit = "M0,48 L60,48 L60,20 L140,20 L140,72 L220,72 L220,48 L300,48 L300,30 L400,30";
+    var circuit2 = "M0,48 L80,48 L80,72 L160,72 L160,24 L240,24 L240,48 L320,48 L320,60 L400,60";
+
+    var frames = [heartbeat, heartbeat2, heartbeat, circuit, circuit2, circuit, heartbeat];
+    var idx = 0;
+
+    function tick(){
+      if(!pathEl) return;
+      pathEl.setAttribute('d', frames[idx % frames.length]);
+      idx++;
+    }
+    if(!reduceMotion){ setInterval(tick, 900); }
+
+    function animateCount(el, target, suffix, duration){
+      var start = 0;
+      var startTime = null;
+      function step(ts){
+        if(!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        var val = Math.round(start + (target - start) * progress);
+        el.innerHTML = val + '<span>' + suffix + '</span>';
+        if(progress < 1){ requestAnimationFrame(step); }
+      }
+      requestAnimationFrame(step);
+    }
+
+    animateCount(syncEl, 94, '%', 1400);
+    animateCount(pwrEl, 78, '%', 1400);
+
+    var pulseTarget = 62;
+    function updatePulse(){
+      var jitter = Math.round((Math.random() - 0.5) * 4);
+      pulseEl.innerHTML = (pulseTarget + jitter) + '<span> bpm</span>';
+    }
+    updatePulse();
+    if(!reduceMotion){ setInterval(updatePulse, 1800); }
+  })();
+</script>
+
+</body>
+</html>
